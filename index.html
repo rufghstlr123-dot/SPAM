@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>스팸 비율 계산기</title>
+  <meta name="description" content="메이플스토리 주요 아이템의 최근 체결가 시세를 기준으로 실시간 스팸 비율을 계산하고 보여주는 도구입니다.">
+  
+  <!-- SEO & Icons -->
+  <link rel="icon" href="https://cdn.mapleplanet.gg/icons/item/5062000.webp" type="image/webp">
+  
+  <!-- Premium Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Noto+Sans+KR:wght@300;400;700;900&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="background-decorations">
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+    <div class="glow-orb orb-3"></div>
+  </div>
+
+  <div class="container">
+    <header class="app-header">
+      <div class="header-main">
+        <div class="brand-logo">
+          <img src="https://cdn.mapleplanet.gg/icons/item/5062000.webp" alt="Calculator Logo" class="brand-icon">
+          <h1>스팸 비율 <span>계산기</span></h1>
+        </div>
+        
+        <div class="header-controls">
+          <div class="update-info">
+            <span class="meta-label">마지막 업데이트:</span>
+            <span id="last-updated-time" class="meta-value">데이터 로드 중...</span>
+          </div>
+          <button id="refresh-btn" class="btn-refresh" aria-label="시세 새로고침" title="시세 동기화 및 갱신">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="refresh-icon" viewBox="0 0 24 24">
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l.73-.72"/>
+            </svg>
+          </button>
+          <div class="status-indicator" title="실시간 서버 활성화됨">
+            <span class="pulse-dot"></span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="dashboard-grid" id="items-container">
+      <!-- Loading Skeletons -->
+      <div class="skeleton-card"></div>
+      <div class="skeleton-card"></div>
+      <div class="skeleton-card"></div>
+      <div class="skeleton-card"></div>
+    </main>
+  </div>
+
+  <!-- Core webapp logic -->
+  <script src="app.js"></script>
+</body>
+</html>

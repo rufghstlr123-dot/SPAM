@@ -1,0 +1,9 @@
+{
+  "name": "maple-spam-calculator",
+  "version": "1.0.0",
+  "description": "메이플스토리 스팸 비율 계산기",
+  "dependencies": {
+    "node-fetch": "^2.7.0",
+    "cheerio": "^1.0.0"
+  }
+}
