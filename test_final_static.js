@@ -2,7 +2,7 @@
 const fetch = require('node-fetch');
 
 async function testStatic() {
-  const url = 'http://localhost:3012/api/prices';
+  const url = 'http://localhost:3015/api/prices';
   console.log(`[TEST] Verifying final static prices API: ${url}`);
   try {
     const res = await fetch(url, { timeout: 15000 });

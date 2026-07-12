@@ -293,7 +293,7 @@ a:hover {
    ------------------------------------------------------------ */
 .dashboard-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr); /* 2x2 바둑판 그리드 배치 */
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* 3개 카드 배치 시 최적의 밸런스 유지 */
   gap: 2rem;
 }
 
