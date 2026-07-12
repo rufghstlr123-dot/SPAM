@@ -354,63 +354,94 @@ function renderCardSearchDropdown(items, dropdownEl) {
   dropdownEl.innerHTML = '';
   const query = document.getElementById('card-search-input').value.trim();
 
-  if (items.length === 0) {
-    dropdownEl.innerHTML = `
-      <div class="search-no-results" style="font-size:0.75rem; padding:10px; text-align:center; color:var(--text-muted);">
-        검색 결과가 없습니다.<br>
-        <button id="direct-id-entry-btn" style="margin-top:8px; background:var(--color-primary); color:white; border:none; padding:4px 8px; border-radius:6px; cursor:pointer; font-family:var(--font-primary); font-size:0.7rem;">
-          아이템 ID 직접 입력하기
-        </button>
-      </div>
-    `;
-    dropdownEl.classList.remove('hidden');
-
-    const directBtn = document.getElementById('direct-id-entry-btn');
-    if (directBtn) {
-      directBtn.addEventListener('click', () => {
-        const rawId = prompt("등록할 아이템의 ID 숫자를 입력해 주세요.\n(예: 수레바퀴는 4031024)");
-        if (rawId && /^\d+$/.test(rawId)) {
-          tempCardState.item = { id: rawId, name: query || `아이템 ${rawId}` };
-          tempCardState.stage = 'parameters';
-          tempCardState.A = 1000;
-          tempCardState.B = 1;
-          const cardEl = document.getElementById('temp-search-card');
-          if (cardEl) renderTempCardContent(cardEl);
-        } else if (rawId) {
-          alert("숫자 ID만 입력 가능합니다.");
-        }
+  // 1. If matches exist, render them
+  if (items.length > 0) {
+    items.slice(0, 5).forEach(item => {
+      const itemEl = document.createElement('div');
+      itemEl.className = 'card-search-item';
+      const iconUrl = `https://cdn.mapleplanet.gg/icons/item/${item.id}.webp`;
+      itemEl.innerHTML = `
+        <div class="card-search-item-icon-container">
+          <img src="${iconUrl}" alt="" class="card-search-item-icon" onerror="this.src='https://cdn.mapleplanet.gg/icons/item/5062000.webp'">
+        </div>
+        <div class="card-search-item-text">
+          <span class="card-search-item-id">ID ${item.id}</span>
+          <span class="card-search-item-name">${item.name}</span>
+        </div>
+      `;
+      itemEl.addEventListener('click', () => {
+        tempCardState.item = item;
+        tempCardState.stage = 'parameters';
+        if (item.id == 5062000)      { tempCardState.A = 4500; tempCardState.B = 11; }
+        else if (item.id == 5520000) { tempCardState.A = 2500; tempCardState.B = 1; }
+        else if (item.id == 5041000) { tempCardState.A = 250;  tempCardState.B = 1; }
+        else                         { tempCardState.A = 1000; tempCardState.B = 1; }
+        const cardEl = document.getElementById('temp-search-card');
+        if (cardEl) renderTempCardContent(cardEl);
       });
-    }
-    return;
+      dropdownEl.appendChild(itemEl);
+    });
   }
 
-  items.slice(0, 5).forEach(item => {
-    const itemEl = document.createElement('div');
-    itemEl.className = 'card-search-item';
-    const iconUrl = `https://cdn.mapleplanet.gg/icons/item/${item.id}.webp`;
-    itemEl.innerHTML = `
-      <div class="card-search-item-icon-container">
-        <img src="${iconUrl}" alt="" class="card-search-item-icon" onerror="this.src='https://cdn.mapleplanet.gg/icons/item/5062000.webp'">
-      </div>
-      <div class="card-search-item-text">
-        <span class="card-search-item-id">ID ${item.id}</span>
-        <span class="card-search-item-name">${item.name}</span>
-      </div>
-    `;
-    itemEl.addEventListener('click', () => {
-      tempCardState.item = item;
-      tempCardState.stage = 'parameters';
-      if (item.id == 5062000)      { tempCardState.A = 4500; tempCardState.B = 11; }
-      else if (item.id == 5520000) { tempCardState.A = 2500; tempCardState.B = 1; }
-      else if (item.id == 5041000) { tempCardState.A = 250;  tempCardState.B = 1; }
-      else                         { tempCardState.A = 1000; tempCardState.B = 1; }
-      const cardEl = document.getElementById('temp-search-card');
-      if (cardEl) renderTempCardContent(cardEl);
-    });
-    dropdownEl.appendChild(itemEl);
-  });
+  // 2. Always append a helpful direct ID entry option at the bottom / empty state
+  const helperEl = document.createElement('div');
+  helperEl.style.borderTop = '1px solid rgba(255,255,255,0.06)';
+  helperEl.style.padding = '10px';
+  helperEl.style.display = 'flex';
+  helperEl.style.flexDirection = 'column';
+  helperEl.style.gap = '6px';
+  helperEl.style.alignItems = 'center';
 
+  if (items.length === 0) {
+    helperEl.innerHTML = `
+      <span style="font-size:0.75rem; color:var(--text-muted);">찾으시는 아이템 "${query}"이(가) 목록에 없나요?</span>
+      <button id="direct-id-entry-btn" style="width:100%; padding:8px; border:none; background:var(--color-primary); color:white; border-radius:8px; font-size:0.75rem; font-weight:600; cursor:pointer;">
+        "${query}" 아이템 ID로 추가하기
+      </button>
+      <a href="https://mapleplanet.gg/database" target="_blank" style="font-size:0.65rem; color:var(--color-primary); text-decoration:underline;">
+        메이플 플래닛 도감에서 ID 찾기 ↗
+      </a>
+    `;
+  } else {
+    helperEl.innerHTML = `
+      <a href="https://mapleplanet.gg/database" target="_blank" style="font-size:0.65rem; color:var(--text-muted); text-decoration:none; opacity:0.8;">
+        원하는 아이템이 없나요? 도감에서 ID로 추가하기 ↗
+      </a>
+    `;
+    helperEl.style.cursor = 'pointer';
+    helperEl.addEventListener('click', (e) => {
+      if (e.target.tagName === 'A') return;
+      const rawId = prompt("등록할 아이템의 ID 숫자를 입력해 주세요.\n(예: 수레바퀴는 4031024)");
+      if (rawId && /^\d+$/.test(rawId)) {
+        tempCardState.item = { id: rawId, name: `아이템 ${rawId}` };
+        tempCardState.stage = 'parameters';
+        tempCardState.A = 1000;
+        tempCardState.B = 1;
+        const cardEl = document.getElementById('temp-search-card');
+        if (cardEl) renderTempCardContent(cardEl);
+      }
+    });
+  }
+
+  dropdownEl.appendChild(helperEl);
   dropdownEl.classList.remove('hidden');
+
+  const directBtn = document.getElementById('direct-id-entry-btn');
+  if (directBtn) {
+    directBtn.addEventListener('click', () => {
+      const rawId = prompt(`"${query}" 아이템의 메이플 플래닛 ID 숫자를 입력해 주세요.\n(도감 페이지 주소의 숫자값)`);
+      if (rawId && /^\d+$/.test(rawId)) {
+        tempCardState.item = { id: rawId, name: query || `아이템 ${rawId}` };
+        tempCardState.stage = 'parameters';
+        tempCardState.A = 1000;
+        tempCardState.B = 1;
+        const cardEl = document.getElementById('temp-search-card');
+        if (cardEl) renderTempCardContent(cardEl);
+      } else if (rawId) {
+        alert("숫자 ID만 입력 가능합니다.");
+      }
+    });
+  }
 }
 
 // ─────────────────────────────────────────────
