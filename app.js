@@ -352,9 +352,35 @@ function initCardSearchInput() {
 
 function renderCardSearchDropdown(items, dropdownEl) {
   dropdownEl.innerHTML = '';
+  const query = document.getElementById('card-search-input').value.trim();
+
   if (items.length === 0) {
-    dropdownEl.innerHTML = '<div class="search-no-results" style="font-size:0.75rem;">결과가 없습니다.</div>';
+    dropdownEl.innerHTML = `
+      <div class="search-no-results" style="font-size:0.75rem; padding:10px; text-align:center; color:var(--text-muted);">
+        검색 결과가 없습니다.<br>
+        <button id="direct-id-entry-btn" style="margin-top:8px; background:var(--color-primary); color:white; border:none; padding:4px 8px; border-radius:6px; cursor:pointer; font-family:var(--font-primary); font-size:0.7rem;">
+          아이템 ID 직접 입력하기
+        </button>
+      </div>
+    `;
     dropdownEl.classList.remove('hidden');
+
+    const directBtn = document.getElementById('direct-id-entry-btn');
+    if (directBtn) {
+      directBtn.addEventListener('click', () => {
+        const rawId = prompt("등록할 아이템의 ID 숫자를 입력해 주세요.\n(예: 수레바퀴는 4031024)");
+        if (rawId && /^\d+$/.test(rawId)) {
+          tempCardState.item = { id: rawId, name: query || `아이템 ${rawId}` };
+          tempCardState.stage = 'parameters';
+          tempCardState.A = 1000;
+          tempCardState.B = 1;
+          const cardEl = document.getElementById('temp-search-card');
+          if (cardEl) renderTempCardContent(cardEl);
+        } else if (rawId) {
+          alert("숫자 ID만 입력 가능합니다.");
+        }
+      });
+    }
     return;
   }
 
