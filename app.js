@@ -180,7 +180,7 @@ function renderTempCardContent(cardEl) {
   if (tempCardState.stage === 'search') {
     cardEl.innerHTML = `
       <div class="card-header-block" style="width: 100%;">
-        <div class="icon-container" id="card-icon-preview-container">
+        <div class="icon-container">
           <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="color: var(--color-primary); filter: drop-shadow(0 0 8px var(--color-primary-glow));">
             <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
           </svg>
@@ -188,12 +188,13 @@ function renderTempCardContent(cardEl) {
         <div class="item-title-block" style="flex: 1; position: relative;">
           <div class="card-search-wrapper">
             <input type="text" id="card-search-input" placeholder="아이템 이름" autocomplete="off">
+            <div id="card-search-dropdown" class="card-search-dropdown hidden"></div>
           </div>
-          <div id="card-id-preview" style="display:none; font-size:0.7rem; color:var(--text-muted); margin-top:4px; padding-left:2px;"></div>
         </div>
       </div>
-      <div id="card-search-body" style="flex: 1; display: flex; align-items: center; justify-content: center; min-height: 120px; border: 1px dashed rgba(255,255,255,0.04); border-radius: 16px; margin-top: 1rem; background: rgba(0,0,0,0.08);">
-        <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">아이템 이름을 입력하고 Enter를 누르세요</span>
+      <!-- Empty body template with generic spacer -->
+      <div style="flex: 1; display: flex; align-items: center; justify-content: center; min-height: 120px; border: 1px dashed rgba(255,255,255,0.04); border-radius: 16px; margin-top: 1rem; background: rgba(0,0,0,0.08);">
+        <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">아이템을 검색하여 등록해 주세요.</span>
       </div>
     `;
     initCardSearchInput();
@@ -313,131 +314,77 @@ function renderTempCardContent(cardEl) {
 }
 
 // ─────────────────────────────────────────────
-//  Card 4 — Search Handler (Enter key → /api/search)
+//  Card 4 — Autocomplete Search
 // ─────────────────────────────────────────────
 function initCardSearchInput() {
   const searchInput = document.getElementById('card-search-input');
-  if (!searchInput) return;
+  const searchDropdown = document.getElementById('card-search-dropdown');
+  if (!searchInput || !searchDropdown) return;
 
   let debounceTimeout = null;
 
   searchInput.addEventListener('input', () => {
     clearTimeout(debounceTimeout);
     const query = searchInput.value.trim();
-    const bodyEl = document.getElementById('card-search-body');
-
     if (!query) {
-      if (bodyEl) bodyEl.innerHTML = '<span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">아이템 이름을 입력하고 Enter를 누르세요</span>';
+      searchDropdown.innerHTML = '';
+      searchDropdown.classList.add('hidden');
       return;
     }
-
-    // Live icon preview if query looks like an ID
-    const previewContainer = document.getElementById('card-icon-preview-container');
-    if (/^\d+$/.test(query) && previewContainer) {
-      previewContainer.innerHTML = `<img src="https://cdn.mapleplanet.gg/icons/item/${query}.webp" class="item-icon" onerror="this.style.display='none'">`;
-    }
-
-    // Debounce API search
     debounceTimeout = setTimeout(async () => {
-      if (bodyEl) bodyEl.innerHTML = '<span style="font-size: 0.8rem; color: var(--text-muted);">검색 중...</span>';
       try {
         const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
-        if (!res.ok) throw new Error('검색 실패');
+        if (!res.ok) throw new Error('검색 에러');
         const result = await res.json();
-        const items = result.data || [];
-        renderSearchResults(items, bodyEl, query);
+        renderCardSearchDropdown(result.data || [], searchDropdown);
       } catch (err) {
         console.error('카드 검색 오류:', err);
-        if (bodyEl) bodyEl.innerHTML = '<span style="font-size: 0.8rem; color: var(--text-muted);">검색에 실패했습니다. 잠시 후 다시 시도해주세요.</span>';
       }
-    }, 500);
+    }, 300);
   });
 
-  // Enter key → direct scrape if input looks like an ID
-  searchInput.addEventListener('keydown', async (e) => {
-    if (e.key !== 'Enter') return;
-    const query = searchInput.value.trim();
-    if (!query) return;
-
-    if (/^\d+$/.test(query)) {
-      // Numeric input: try direct scrape by ID
-      const bodyEl = document.getElementById('card-search-body');
-      if (bodyEl) bodyEl.innerHTML = '<span style="font-size: 0.8rem; color: var(--text-muted);">아이템 정보 조회 중...</span>';
-      try {
-        const res = await fetch(`/api/scrape-item?id=${query}`);
-        if (!res.ok) throw new Error('조회 실패');
-        const data = await res.json();
-        if (data.status === 'success' && data.name !== 'Unknown Item') {
-          // Jump directly to parameters stage
-          tempCardState.item = { id: query, name: data.name };
-          tempCardState.stage = 'parameters';
-          tempCardState.A = 1000;
-          tempCardState.B = 1;
-          const cardEl = document.getElementById('temp-search-card');
-          if (cardEl) renderTempCardContent(cardEl);
-        } else {
-          if (bodyEl) bodyEl.innerHTML = '<span style="font-size: 0.8rem; color: #EF4444;">아이템을 찾을 수 없습니다.</span>';
-        }
-      } catch (err) {
-        const bodyEl = document.getElementById('card-search-body');
-        if (bodyEl) bodyEl.innerHTML = '<span style="font-size: 0.8rem; color: #EF4444;">조회에 실패했습니다.</span>';
-      }
+  document.addEventListener('click', (e) => {
+    if (!searchInput.contains(e.target) && !searchDropdown.contains(e.target)) {
+      searchDropdown.classList.add('hidden');
     }
   });
 }
 
-function renderSearchResults(items, bodyEl, query) {
-  if (!bodyEl) return;
-
+function renderCardSearchDropdown(items, dropdownEl) {
+  dropdownEl.innerHTML = '';
   if (items.length === 0) {
-    bodyEl.innerHTML = `
-      <div style="text-align:center; padding: 1rem;">
-        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">"${query}" 검색 결과가 없습니다.</p>
-        <p style="font-size: 0.75rem; color: var(--text-muted); opacity: 0.7;">아이템 ID를 직접 입력해 보세요 (예: 5062000)</p>
-      </div>
-    `;
+    dropdownEl.innerHTML = '<div class="search-no-results" style="font-size:0.75rem;">결과가 없습니다.</div>';
+    dropdownEl.classList.remove('hidden');
     return;
   }
 
-  bodyEl.style.display = 'flex';
-  bodyEl.style.flexDirection = 'column';
-  bodyEl.style.alignItems = 'stretch';
-  bodyEl.style.justifyContent = 'flex-start';
-  bodyEl.style.padding = '0.5rem 0';
-  bodyEl.style.overflowY = 'auto';
-  bodyEl.style.maxHeight = '180px';
-
-  bodyEl.innerHTML = items.slice(0, 5).map(item => {
+  items.slice(0, 5).forEach(item => {
+    const itemEl = document.createElement('div');
+    itemEl.className = 'card-search-item';
     const iconUrl = `https://cdn.mapleplanet.gg/icons/item/${item.id}.webp`;
-    return `
-      <div class="card-search-item" data-id="${item.id}" data-name="${item.name}" style="display:flex; align-items:center; gap:10px; padding:8px 12px; cursor:pointer; border-radius:10px; transition: background 0.15s;">
-        <div class="card-search-item-icon-container">
-          <img src="${iconUrl}" alt="" class="card-search-item-icon" onerror="this.src='https://cdn.mapleplanet.gg/icons/item/5062000.webp'">
-        </div>
-        <div class="card-search-item-text">
-          <span class="card-search-item-id">ID ${item.id}</span>
-          <span class="card-search-item-name">${item.name}</span>
-        </div>
+    itemEl.innerHTML = `
+      <div class="card-search-item-icon-container">
+        <img src="${iconUrl}" alt="" class="card-search-item-icon" onerror="this.src='https://cdn.mapleplanet.gg/icons/item/5062000.webp'">
+      </div>
+      <div class="card-search-item-text">
+        <span class="card-search-item-id">ID ${item.id}</span>
+        <span class="card-search-item-name">${item.name}</span>
       </div>
     `;
-  }).join('');
-
-  bodyEl.querySelectorAll('.card-search-item').forEach(el => {
-    el.addEventListener('mouseenter', () => el.style.background = 'rgba(255,255,255,0.05)');
-    el.addEventListener('mouseleave', () => el.style.background = '');
-    el.addEventListener('click', () => {
-      const id = el.dataset.id;
-      const name = el.dataset.name;
-      tempCardState.item = { id, name };
+    itemEl.addEventListener('click', () => {
+      tempCardState.item = item;
       tempCardState.stage = 'parameters';
-      if (id == 5062000)      { tempCardState.A = 4500; tempCardState.B = 11; }
-      else if (id == 5520000) { tempCardState.A = 2500; tempCardState.B = 1; }
-      else if (id == 5041000) { tempCardState.A = 250;  tempCardState.B = 1; }
-      else                    { tempCardState.A = 1000; tempCardState.B = 1; }
+      if (item.id == 5062000)      { tempCardState.A = 4500; tempCardState.B = 11; }
+      else if (item.id == 5520000) { tempCardState.A = 2500; tempCardState.B = 1; }
+      else if (item.id == 5041000) { tempCardState.A = 250;  tempCardState.B = 1; }
+      else                         { tempCardState.A = 1000; tempCardState.B = 1; }
       const cardEl = document.getElementById('temp-search-card');
       if (cardEl) renderTempCardContent(cardEl);
     });
+    dropdownEl.appendChild(itemEl);
   });
+
+  dropdownEl.classList.remove('hidden');
 }
 
 // ─────────────────────────────────────────────
