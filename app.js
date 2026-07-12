@@ -331,6 +331,15 @@ function initCardSearchInput() {
       searchDropdown.classList.add('hidden');
       return;
     }
+
+    // Immediately unhide and show loading state
+    searchDropdown.classList.remove('hidden');
+    searchDropdown.innerHTML = `
+      <div style="font-size:0.75rem; padding:10px; text-align:center; color:var(--text-muted);">
+        검색 중...
+      </div>
+    `;
+
     debounceTimeout = setTimeout(async () => {
       try {
         const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
@@ -339,8 +348,13 @@ function initCardSearchInput() {
         renderCardSearchDropdown(result.data || [], searchDropdown);
       } catch (err) {
         console.error('카드 검색 오류:', err);
+        searchDropdown.innerHTML = `
+          <div style="font-size:0.75rem; padding:10px; text-align:center; color:var(--text-muted);">
+            검색 오류가 발생했습니다.
+          </div>
+        `;
       }
-    }, 300);
+    }, 400);
   });
 
   document.addEventListener('click', (e) => {

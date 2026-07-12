@@ -806,3 +806,9 @@ a:hover {
   cursor: not-allowed;
   transform: none;
 }
+
+/* Force temporary card to have overflow visible so the search dropdown doesn't get clipped */
+#temp-search-card {
+  overflow: visible !important;
+}
+
