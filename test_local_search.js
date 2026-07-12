@@ -1,8 +1,4 @@
-// api/search.js
-// Vercel Serverless Function
-// High-speed static catalog lookup search endpoint.
-// Eliminates unstable scraping to avoid 500 error codes.
-
+// test_local_search.js
 const POPULAR_ITEMS = [
   // 캐시 / 편의성
   { id: '5062000', name: '미라클 큐브' },
@@ -78,7 +74,7 @@ const POPULAR_ITEMS = [
   { id: '1022073', name: '알카도 안경' },
   { id: '1152012', name: '신고 배지' },
   
-  // 인기 장비 및 무기류
+  // 메이플 템 및 인기 무기
   { id: '1302077', name: '메이플 소드' },
   { id: '1472061', name: '메이플 칸데오' },
   { id: '1472068', name: '메이플 크로우' },
@@ -87,25 +83,14 @@ const POPULAR_ITEMS = [
   { id: '1402046', name: '드래곤 클레이모어' }
 ];
 
-module.exports = async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  if (req.method === 'OPTIONS') return res.status(200).end();
-
-  const { q } = req.query;
-  if (!q || !q.trim()) {
-    return res.status(200).json({ status: 'success', data: [] });
-  }
-
+function searchLocal(q) {
   const queryClean = q.trim().toLowerCase();
-  
-  // Exact lookup on memory database to prevent upstream errors
   const matches = POPULAR_ITEMS.filter(item => 
     item.name.toLowerCase().includes(queryClean) || item.id.includes(queryClean)
   );
+  return matches;
+}
 
-  return res.status(200).json({
-    status: 'success',
-    data: matches,
-  });
-};
+console.log("Searching '수레바퀴':", searchLocal('수레바퀴'));
+console.log("Searching '큐브':", searchLocal('큐브'));
+console.log("Searching '주문서':", searchLocal('주문서'));
