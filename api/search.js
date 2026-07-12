@@ -72,8 +72,9 @@ module.exports = async (req, res) => {
     $('script').each((_, el) => {
       const content = $(el).html() || '';
       if (content.includes('self.__next_f') || content.includes('__NEXT_DATA__')) {
-        // Match IDs and Names via regular expressions inside the serialised JS scripts
-        const idRegex = /"id"\s*:\s*"(\d+)"\s*,\s*"name"\s*:\s*"([^"]+)"/g;
+        // Relaxed regex to match both clean JSON and escaped JSON inside script tag contents
+        // Handles: \"id\":\"5062000\",\"name\":\"미라클 큐브\" or "id":"5062000","name":"미라클 큐브"
+        const idRegex = /\\?"id\\?"\s*:\s*\\?"(\d+)\\?"\s*,\s*\\?"name\\?"\s*:\s*\\?"([^"\\]+)\\?"/g;
         let match;
         while ((match = idRegex.exec(content)) !== null) {
           const id = match[1];
@@ -81,7 +82,7 @@ module.exports = async (req, res) => {
           if (!items.find(i => i.id === id) && name.toLowerCase().includes(queryClean)) {
             items.push({ id, name });
           }
-          if (items.length >= 8) break;
+          if (items.length >= 12) break;
         }
       }
     });
